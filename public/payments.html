@@ -295,12 +295,10 @@
     const orderId = urlParams.get('id');
     let montoActual = 0; 
 
-    // Lógica de pestañas (Corregida para que funcione con tus IDs)
     window.selectMethod = function(method) {
         document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.payment-details').forEach(d => d.classList.remove('active'));
         
-        // Buscamos el botón correcto por el parámetro
         const buttons = document.querySelectorAll('.method-btn');
         if(method === 'card') buttons[0].classList.add('active');
         if(method === 'cashapp') buttons[1].classList.add('active');
@@ -321,9 +319,7 @@
         document.getElementById('consent-modal').style.display = 'none';
     };
 
-    // LÓGICA PAYPAL
     function renderPayPalButtons(monto) {
-        // Limpiamos el contenedor por si acaso se renderiza dos veces
         document.getElementById('paypal-button-container').innerHTML = '';
         
         paypal.Buttons({
@@ -363,7 +359,7 @@
                         transaction_id: details.id,
                         fecha_pago: new Date()
                     });
-                    showFinal("success-msg");
+                    window.location.href = "success.html"; 
                 });
             },
             onError: function(err) {
@@ -373,7 +369,6 @@
         }).render('#paypal-button-container');
     }
 
-    // Reporte Manual (CashApp/Venmo)
     window.verificar = async function(metodo) {
         const email = document.getElementById('client-email').value;
         const estadoUSA = document.getElementById('state-selector').value;
@@ -399,7 +394,7 @@
 
     async function cargarOrden() {
         if (!orderId) {
-            document.getElementById('loading').innerHTML = "<h3 style='red'>Link invalid. ❌</h3>";
+            document.getElementById('loading').innerHTML = "<h3 style='color:red'>Link invalid. ❌</h3>";
             return;
         }
 
@@ -408,6 +403,17 @@
 
         if (docSnap.exists()) {
             const data = docSnap.data();
+            
+            // --- VALIDACIÓN DE EXPIRACIÓN REAL ---
+            const fechaCreacion = data.fecha?.toDate() || new Date();
+            const ahora = new Date();
+            const diferenciaMinutos = (ahora - fechaCreacion) / 1000 / 60;
+
+            if (diferenciaMinutos > 15 && data.estado !== "completado") {
+                bloquearOrden();
+                return;
+            }
+
             montoActual = data.monto; 
 
             if(data.estado === "pendiente" || data.estado === "Waiting") {
@@ -417,7 +423,6 @@
                 document.getElementById('loading').style.display = "none";
                 document.getElementById('content').style.display = "block";
                 
-                // Inicializar PayPal con el monto de la DB
                 renderPayPalButtons(data.monto);
 
             } else if (data.estado === "por_verificar") {
@@ -429,7 +434,7 @@
                  bloquearOrden();
             }
         } else {
-            document.getElementById('loading').innerHTML = "<h3 style='red'>Order not found.</h3>";
+            document.getElementById('loading').innerHTML = "<h3 style='color:red'>Order not found.</h3>";
         }
     }
 
@@ -441,7 +446,8 @@
             const dif = expiracion - new Date();
             if (dif <= 0) {
                 bloquearOrden();
-                return clearInterval(int);
+                clearInterval(int);
+                return;
             }
             const m = Math.floor(dif / 60000);
             const s = Math.floor((dif % 60000) / 1000);
@@ -455,6 +461,8 @@
         document.getElementById('content').style.display = "none";
         document.getElementById('loading').style.display = "none";
         document.getElementById('expired-msg').style.display = "block";
+        // Marcamos en rojo para feedback visual extra
+        document.getElementById('mainCard').style.borderTop = "5px solid var(--danger)";
     }
 
     function showFinal(id) {
@@ -463,7 +471,6 @@
         document.getElementById(id).style.display = "block";
     }
 
-    // Botón Stripe (Legacy / Opcional)
     document.getElementById('stripe-button').onclick = () => {
         const email = document.getElementById('client-email').value;
         const estadoUSA = document.getElementById('state-selector').value;

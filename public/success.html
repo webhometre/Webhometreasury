@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Successful</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #00d4ff;
+            --success: #2e7d32;
+            --dark: #121212;
+            --card-bg: #ffffff;
+            --text: #333;
+            --gray: #f4f6f8;
+        }
+
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background: var(--gray);
+            color: var(--text); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* Marca de agua sutil */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80vw; height: 80vh;
+            background-image: url('https://www.dropbox.com/scl/fi/etecc18ng3itmfdcnogap/Screenshot_20260127_153032_Chrome.jpg?rlkey=hoaa73wx1ogrgr67ve8ari5xt&st=klarub7j&raw=1'); 
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+            opacity: 0.03;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .success-card { 
+            background: var(--card-bg); 
+            padding: 50px 40px; 
+            border-radius: 25px; 
+            width: 100%; 
+            max-width: 500px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.08); 
+            text-align: center; 
+            border: 1px solid #eaeaea;
+            border-top: 5px solid var(--success);
+            position: relative;
+            z-index: 1;
+        }
+
+        .brand-logo { 
+            width: 120px; 
+            margin-bottom: 25px; 
+            border-radius: 8px; 
+        }
+
+        .icon-wrapper {
+            width: 90px; 
+            height: 90px; 
+            background: #e8f5e9; 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            margin: 0 auto 25px;
+            animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .icon-wrapper i {
+            font-size: 45px; 
+            color: var(--success);
+        }
+
+        h1 {
+            color: var(--dark);
+            margin: 0 0 15px 0;
+            font-size: 2.2em;
+            font-weight: 600;
+        }
+
+        p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            font-size: 1.05em;
+        }
+
+        .highlight {
+            font-weight: 600;
+            color: #444;
+            background: #f4f6f8;
+            padding: 2px 8px;
+            border-radius: 5px;
+        }
+
+        .secure-badge {
+            margin-top: 35px;
+            font-size: 0.85em;
+            color: #999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            80% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="success-card">
+    <img src="https://www.dropbox.com/scl/fi/etecc18ng3itmfdcnogap/Screenshot_20260127_153032_Chrome.jpg?rlkey=hoaa73wx1ogrgr67ve8ari5xt&st=klarub7j&raw=1" alt="Brand Logo" class="brand-logo">
+    
+    <div class="icon-wrapper">
+        <i class="fa-solid fa-check"></i>
+    </div>
+    
+    <h1>Payment Successful!</h1>
+    
+    <p>Thank you for your payment. Your transaction has been completed successfully and securely.</p>
+    
+    <p>An official receipt will be sent to your <span class="highlight">email address</span> shortly, or our team will contact you via <span class="highlight">phone call</span> to confirm the details.</p>
+
+    <div class="secure-badge">
+        <i class="fa-solid fa-lock"></i> Secure 256-bit SSL Encrypted
+    </div>
+</div>
+
+</body>
+</html>

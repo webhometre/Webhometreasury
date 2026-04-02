@@ -23,6 +23,12 @@
         <div class="header">
            <h1>Payment Confirmation</h1>
             <p>Electronic Receipt</p>
+            <div style="text-align: center; margin: 20px 0;">
+    <img src="https://www.dropbox.com/scl/fi/ip30e8ge0aoxhgn4l1q7r/Screenshot_20260401_181358_Chrome.jpg?rlkey=flrqwwzhy6zmtjjdu5lusevht&st=sn1f638c&raw=1" 
+         alt="Firma Electrónica" 
+         style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #ddd;">
+</div>
+
         </div>
         
         <div class="content">
@@ -32,12 +38,12 @@
             <div class="invoice-details">
                 <div class="detail-column">
                     <div class="detail-label">Order No.</div>
-                   <center> <div class="detail-value">#{{ $json.body.orden_id || '001245' }}</div></center>
+                    <div class="detail-value">#{{ $json.body.orden_id || '001245' }}</div>
                 </div>
-                <div class="detail-column">
+               <center> <div class="detail-column">
                     <div class="detail-label">Amount Paid</div>
                     <div class="detail-value" style="font-weight: bold; color: #1a237e;">${{ $json.body.monto || '0.00' }}</div>
-                </div>
+                </div></center>
             </div>
 
             <div class="appointment-box">
