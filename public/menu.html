@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin de s | TechCore</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; color: #fff; padding: 20px; display: flex; justify-content: center; align-items: flex-start; }
+        .admin-wrapper { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 1200px; }
+        .container { background: #2a2a2a; padding: 30px; border-radius: 15px; width: 100%; max-width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h2 { text-align: center; color: #00d4ff; margin-top: 0; }
+        h3 { text-align: center; color: #fbc02d; margin-top: 0; }
+        h4 { text-align: center; color: #e91e63; margin-top: 0; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: none; border-radius: 8px; background: #333; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; margin-top: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-generate { background: #00d4ff; color: #000; }
+        .btn-generate:hover { background: #0099bb; }
+        .btn-n8n { background: #e91e63; color: white; }
+        #linkResult { margin-top: 25px; display: none; padding: 15px; background: #333; border-radius: 8px; border-left: 4px solid #00d4ff; }
+        .btn-copy { background: #28a745; color: white; margin-top: 10px; font-size: 0.9em; }
+        .token-text { font-family: monospace; font-size: 0.8em; color: #aaa; word-break: break-all; display: block; margin-top: 5px; }
+        .pending-list { margin-top: 20px; max-height: 500px; overflow-y: auto; }
+        .pending-item { background: #333; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #fbc02d; }
+        .info-row { font-size: 0.9em; color: #ccc; margin-bottom: 5px; }
+        .btn-approve { background: #28a745; color: white; width: 100%; margin-top: 10px; }
+        #error-log { margin-top: 15px; padding: 10px; background: rgba(255, 0, 0, 0.2); border: 1px solid red; color: #ffcccc; font-size: 0.85em; display: none; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="admin-wrapper">
+    <div class="container">
+        <h2>⚡ Generar Cobro</h2>
+        <input type="text" id="desc" placeholder="Descripción (ej: Soporte Técnico)">
+        <input type="number" id="monto" placeholder="Monto $USD (ej: 20)">
+        <button class="btn-generate" id="btnCrear">Generar Link de Cobro</button>
+        <div id="error-log"></div>
+        <div id="linkResult">
+            <span style="color: #00d4ff;">Link generado con éxito:</span>
+            <strong id="finalUrl" style="display: block; margin: 10px 0; font-size: 0.9em;"></strong>
+            <span class="token-text" id="tokenID"></span>
+            <button class="btn-copy" id="btnCopiar">Copiar para WhatsApp/SMS</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h3>🔍 Verificaciones</h3>
+        <div id="lista-pendientes" class="pending-list">
+            <div style="text-align: center; color: #555; margin-top: 20px;">Cargando base de datos...</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h4>📨 Envíos Manuales</h4>
+        <input type="email" id="n8n-email" placeholder="Correo del cliente">
+        <button class="btn-n8n" id="btnManualN8N">🚀 Abrir Formulario de Envío</button>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<script>
+    // CONFIGURACIÓN DE TU PROYECTO
+    const firebaseConfig = {
+      apiKey: "AIzaSyBD7hF0yyeiX5OMdOqpLx1A9w2g0GQfdPc",
+      authDomain: "home-of-treasury.firebaseapp.com",
+      projectId: "home-of-treasury",
+      storageBucket: "home-of-treasury.firebasestorage.app",
+      messagingSenderId: "1076647044079",
+      appId: "1:1076647044079:web:2cb1d70c35ea43b36a0c1a"
+    };
+
+    // INICIALIZACIÓN
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // ELEMENTOS
+    const btnCrear = document.getElementById('btnCrear');
+    const errorLog = document.getElementById('error-log');
+
+    // --- LÓGICA DE GENERACIÓN ---
+    btnCrear.onclick = function() {
+        const desc = document.getElementById('desc').value;
+        const monto = document.getElementById('monto').value;
+
+        if(!desc || !monto) {
+            alert("Por favor completa los campos");
+            return;
+        }
+
+        btnCrear.innerText = "Procesando...";
+        btnCrear.disabled = true;
+        errorLog.style.display = "none";
+
+        // Guardar en la colección "s" (como el original)
+        db.collection("s").add({
+            descripcion: desc,
+            monto: parseFloat(monto),
+            estado: "pendiente",
+            fecha: firebase.firestore.FieldValue.serverTimestamp()
+        })
+        .then((docRef) => {
+            // CONSTRUIR LA URL DEL TOKEN
+            const urlFinal = window.location.origin + "/payments.html?id=" + docRef.id;
+            
+            document.getElementById('finalUrl').innerText = urlFinal;
+            document.getElementById('tokenID').innerText = "ID: " + docRef.id;
+            document.getElementById('linkResult').style.display = "block";
+            
+            btnCrear.innerText = "Generar Otro Link";
+            btnCrear.disabled = false;
+        })
+        .catch((error) => {
+            console.error("Error Firebase:", error);
+            errorLog.style.display = "block";
+            errorLog.innerText = "Error: " + error.message;
+            btnCrear.innerText = "Reintentar";
+            btnCrear.disabled = false;
+        });
+    };
+
+    // BOTÓN COPIAR
+    document.getElementById('btnCopiar').onclick = function() {
+        const texto = document.getElementById('finalUrl').innerText;
+        navigator.clipboard.writeText(texto).then(() => alert("Copiado al portapapeles"));
+    };
+
+    // --- LÓGICA DE VERIFICACIÓN (TIEMPO REAL) ---
+    db.collection("s").where("estado", "==", "por_verificar")
+    .onSnapshot((snapshot) => {
+        const lista = document.getElementById('lista-pendientes');
+        lista.innerHTML = "";
+
+        if (snapshot.empty) {
+            lista.innerHTML = "<div style='text-align:center;color:#555;padding:20px;'>No hay pagos por revisar</div>";
+            return;
+        }
+
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            const item = document.createElement('div');
+            item.className = 'pending-item';
+            item.innerHTML = `
+                <div class="info-row"><strong>Monto:</strong> $${data.monto}</div>
+                <div class="info-row"><strong>Referencia:</strong> ${data.referencia_ || 'Pendiente'}</div>
+                <button class="btn-approve" onclick="aprobarPago('${doc.id}')">Confirmar Dinero</button>
+            `;
+            lista.appendChild(item);
+        });
+    });
+
+    // FUNCIÓN APROBAR
+    window.aprobarPago = function(id) {
+        if(confirm("¿Confirmas que recibiste el dinero?")) {
+            db.collection("s").doc(id).update({
+                estado: "completado"
+            }).then(() => alert("Pago Aprobado"));
+        }
+    };
+
+    // BOTÓN N8N
+    document.getElementById('btnManualN8N').onclick = function() {
+        const email = document.getElementById('n8n-email').value;
+        if(email) {
+            window.open(window.location.origin + "/boleta.html?email=" + encodeURIComponent(email));
+        }
+    };
+</script>
+
+</body>
+</html>

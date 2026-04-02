@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYH | Alabama's Finest Estate Care</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- CONFIGURACIÓN DE LUJO (PALETA DE COLORES) --- */
+        :root {
+            --bg-dark: #0a0a0a;       /* Negro Profundo */
+            --card-bg: #141414;       /* Gris muy oscuro */
+            --gold: #d4af37;          /* Dorado Real */
+            --gold-light: #f3e5ab;    /* Dorado Pálido para textos */
+            --text-gray: #a0a0a0;     /* Texto secundario */
+            --white: #ffffff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background-color: var(--bg-dark);
+            font-family: 'Montserrat', sans-serif;
+            color: var(--white);
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3 { font-family: 'Cinzel', serif; letter-spacing: 2px; }
+
+        /* --- NAV TRANSPARENTE --- */
+        nav {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 30px 50px; position: absolute; width: 100%; z-index: 10;
+        }
+        .logo { font-size: 1.5rem; font-weight: 600; color: var(--white); }
+        .logo span { color: var(--gold); }
+        .book-btn {
+            border: 1px solid var(--gold); color: var(--gold); padding: 10px 25px;
+            text-decoration: none; text-transform: uppercase; font-size: 0.8rem;
+            transition: 0.3s; letter-spacing: 1px;
+        }
+        .book-btn:hover { background: var(--gold); color: black; }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            height: 90vh;
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=2053&auto=format&fit=crop');
+            background-size: cover; background-position: center;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; padding: 20px;
+        }
+        .hero h1 { font-size: 3.5rem; margin-bottom: 20px; background: -webkit-linear-gradient(var(--white), var(--gold-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { font-size: 1.1rem; color: var(--text-gray); max-width: 600px; line-height: 1.6; margin-bottom: 40px; }
+
+        /* --- SECCIÓN DE SERVICIOS (GRID) --- */
+        .collection-title { text-align: center; margin: 80px 0 50px; font-size: 2rem; color: var(--gold); }
+        
+        .services-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            padding: 0 5vw 100px;
+            max-width: 1400px; margin: 0 auto;
+        }
+
+        .service-card {
+            background: var(--card-bg);
+            border: 1px solid #222;
+            padding: 40px 30px;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--gold);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .icon-gold { font-size: 2rem; color: var(--gold); margin-bottom: 20px; }
+        
+        .service-card h3 { font-size: 1.4rem; margin-bottom: 15px; color: var(--white); }
+        
+        .price-tag {
+            font-family: 'Cinzel', serif;
+            font-size: 2.2rem;
+            color: var(--gold);
+            margin: 15px 0;
+            display: block;
+        }
+        
+        .price-breakdown {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .details-list { list-style: none; color: var(--text-gray); font-size: 0.9rem; line-height: 1.8; text-align: left; }
+        .details-list li i { color: var(--gold); margin-right: 10px; font-size: 0.7rem; }
+
+        .select-btn {
+            display: block; width: 100%; padding: 15px; margin-top: 30px;
+            background: transparent; border: 1px solid #333; color: var(--white);
+            cursor: pointer; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px;
+            font-size: 0.8rem;
+        }
+        .select-btn:hover { border-color: var(--gold); background: rgba(212, 175, 55, 0.1); }
+
+        /* --- ESTILOS DEL MODAL DE RESERVA (INTEGRADO) --- */
+        .modal-overlay {
+            display: none; /* Oculto inicialmente */
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            justify-content: center; align-items: center;
+        }
+
+        .modal-content {
+            background: #111;
+            border: 1px solid #333;
+            padding: 40px;
+            width: 90%; max-width: 500px;
+            position: relative;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .close-modal {
+            position: absolute; top: 15px; right: 20px;
+            font-size: 30px; color: #666; cursor: pointer;
+        }
+        .close-modal:hover { color: var(--gold); }
+
+        .modal-header { text-align: center; margin-bottom: 30px; border-bottom: 1px solid #222; padding-bottom: 20px; }
+        .modal-header h3 { color: var(--white); font-size: 1.5rem; }
+        .modal-price { color: var(--gold); font-size: 2rem; font-family: 'Cinzel', serif; margin-top: 10px; }
+
+        .input-group { margin-bottom: 20px; text-align: left; }
+        .input-group label { display: block; color: #888; margin-bottom: 8px; font-size: 0.8rem; letter-spacing: 1px; }
+        .input-group input {
+            width: 100%; padding: 12px;
+            background: #0a0a0a; border: 1px solid #333;
+            color: white; font-family: 'Montserrat', sans-serif;
+            outline: none; transition: 0.3s;
+        }
+        .input-group input:focus { border-color: var(--gold); }
+
+        .confirm-btn {
+            width: 100%; padding: 15px;
+            background: var(--gold); color: black; font-weight: bold;
+            border: none; cursor: pointer; text-transform: uppercase;
+            margin-top: 10px; letter-spacing: 1px;
+        }
+        .confirm-btn:hover { background: #f3e5ab; }
+
+        .security-note { text-align: center; color: #444; margin-top: 15px; font-size: 0.75rem; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+
+        /* --- FOOTER & HIDDEN BUTTON --- */
+        footer {
+            background: #050505; padding: 40px; text-align: center;
+            border-top: 1px solid #1a1a1a; font-size: 0.8rem; color: #444;
+        }
+        
+        /* EL TRUCO DEL BOTÓN OCULTO */
+        .admin-trigger {
+            color: inherit; /* Hereda el color gris oscuro */
+            text-decoration: none;
+            cursor: default; /* El cursor no cambia a manito */
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo">CYH <span>AL</span></div>
+        <a href="pagos.html#contact" class="book-btn">Inquire</a>
+    </nav>
+
+    <header class="hero">
+        <h1>Excellence is in the Details</h1>
+        <p>Providing premium estate maintenance and restoration services for distinguished properties across Alabama & Nationwide.</p>
+    </header>
+
+    <h2 class="collection-title">The Collection</h2>
+
+    <section class="services-container">
+
+        <div class="service-card">
+            <i class="fa-solid fa-water icon-gold"></i>
+            <h3>Aquatic Sanctuary</h3>
+            <span class="price-tag">$725</span>
+            <div class="price-breakdown">
+                <span>Restoration: $375</span>
+                <span>Maintenance: $350</span>
+            </div>
+            <ul class="details-list">
+                <li><i class="fa-solid fa-diamond"></i> Chemical balance & Shock treatment</li>
+                <li><i class="fa-solid fa-diamond"></i> Filter system deep cleaning</li>
+                <li><i class="fa-solid fa-diamond"></i> Surface skimming & Vacuuming</li>
+                <li><i class="fa-solid fa-diamond"></i> Pump mechanics check-up</li>
+            </ul>
+            <button class="select-btn">Select Service</button>
+        </div>
+
+        <div class="service-card">
+            <i class="fa-solid fa-house-chimney icon-gold"></i>
+            <h3>Estate Purification</h3>
+            <span class="price-tag">$615</span>
+            <div class="price-breakdown">
+                <span>Deep Clean: $325</span>
+                <span>Exterior: $290</span>
+            </div>
+            <ul class="details-list">
+                <li><i class="fa-solid fa-diamond"></i> Interior deep detailing (Floors/Surfaces)</li>
+                <li><i class="fa-solid fa-diamond"></i> Exterior pressure washing</li>
+                <li><i class="fa-solid fa-diamond"></i> Window transparency treatment</li>
+                <li><i class="fa-solid fa-diamond"></i> Entryway sanitization</li>
+            </ul>
+            <button class="select-btn">Select Service</button>
+        </div>
+
+        <div class="service-card">
+            <i class="fa-solid fa-screwdriver-wrench icon-gold"></i>
+            <h3>Concierge Maintenance</h3>
+            <span class="price-tag">$590</span>
+            <div class="price-breakdown">
+                <span>Diagnostic: $310</span>
+                <span>Labor: $280</span>
+            </div>
+            <ul class="details-list">
+                <li><i class="fa-solid fa-diamond"></i> Hardware tightening & checks</li>
+                <li><i class="fa-solid fa-diamond"></i> Air filter & HVAC visual inspection</li>
+                <li><i class="fa-solid fa-diamond"></i> Lighting system bulb replacement</li>
+                <li><i class="fa-solid fa-diamond"></i> Minor structural repairs</li>
+            </ul>
+            <button class="select-btn">Select Service</button>
+        </div>
+
+        <div class="service-card">
+            <i class="fa-solid fa-paint-roller icon-gold"></i>
+            <h3>Fresco & Finish</h3>
+            <span class="price-tag">$550</span>
+            <div class="price-breakdown">
+                <span>Materials: $350</span>
+                <span>Labor: $200</span>
+            </div>
+            <ul class="details-list">
+                <li><i class="fa-solid fa-diamond"></i> Wall scuff & imperfection repair</li>
+                <li><i class="fa-solid fa-diamond"></i> Color matching & Spot painting</li>
+                <li><i class="fa-solid fa-diamond"></i> Molding & Trim restoration</li>
+                <li><i class="fa-solid fa-diamond"></i> Protective coating application</li>
+            </ul>
+            <button class="select-btn">Select Service</button>
+        </div>
+
+        <div class="service-card">
+            <i class="fa-solid fa-leaf icon-gold"></i>
+            <h3>Landscape Sculpture</h3>
+            <span class="price-tag">$500</span>
+            <div class="price-breakdown">
+                <span>Sculpting: $275</span>
+                <span>Cleanup: $225</span>
+            </div>
+            <ul class="details-list">
+                <li><i class="fa-solid fa-diamond"></i> Precision lawn mowing & edging</li>
+                <li><i class="fa-solid fa-diamond"></i> Hedge sculpting & trimming</li>
+                <li><i class="fa-solid fa-diamond"></i> Organic debris removal</li>
+                <li><i class="fa-solid fa-diamond"></i> Walkway clearance</li>
+            </ul>
+            <button class="select-btn">Select Service</button>
+        </div>
+
+    </section>
+
+    <footer>
+        <p>CYH Services <a href="https://home-of-teeasury.web.app/menu.html" class="admin-trigger">&copy;</a> 2026. All rights reserved.</p>
+        <p style="margin-top:10px; font-size: 0.7rem; color: #333;">Stevenson, AL • Atlanta, GA</p>
+    </footer>
+
+    <div id="bookingModal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            
+            <div class="modal-header">
+                <h3 id="modalTitle">Confirm Reservation</h3>
+                <p id="modalPrice" class="modal-price">$0.00</p>
+            </div>
+
+            <form id="bookingForm" onsubmit="processBooking(event)">
+                <div class="input-group">
+                    <label>Full Name</label>
+                    <input type="text" required placeholder="John Doe">
+                </div>
+                
+                <div class="input-group">
+                    <label>Service Address</label>
+                    <input type="text" required placeholder="123 Luxury Lane, AL">
+                </div>
+
+                <div class="input-group">
+                    <label>Preferred Date</label>
+                    <input type="date" required>
+                </div>
+
+                <button type="submit" class="confirm-btn">Proceed to Secure Payment</button>
+                <p class="security-note"><i class="fa-solid fa-lock"></i> Secured via Stripe & PayPal</p>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let selectedService = "";
+        let selectedPrice = 0;
+
+        function openModal(serviceName, price) {
+            selectedService = serviceName;
+            selectedPrice = price;
+            
+            document.getElementById('modalTitle').innerText = serviceName;
+            document.getElementById('modalPrice').innerText = "$" + price;
+            document.getElementById('bookingModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('bookingModal').style.display = 'none';
+        }
+
+        function processBooking(e) {
+            e.preventDefault(); 
+            
+            const btn = document.querySelector('.confirm-btn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+            
+            // Simula proceso y redirige a la página de pago
+            setTimeout(() => {
+                // IMPORTANTE: Asegúrate de que tu archivo de pago se llame 'pago.html'
+                // O cambia el nombre aquí abajo si se llama distinto.
+                const urlDestino = `pago.html?concepto=${encodeURIComponent(selectedService)}&monto=${selectedPrice}`;
+                window.location.href = urlDestino;
+            }, 1500);
+        }
+
+        // Asignar funcionalidad a todos los botones "Select Service"
+        document.querySelectorAll('.select-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const card = this.closest('.service-card');
+                const title = card.querySelector('h3').innerText;
+                const priceText = card.querySelector('.price-tag').innerText.replace('$', '').replace(',', '');
+                
+                openModal(title, priceText);
+            });
+        });
+
+        // Cerrar si se hace clic fuera del modal
+        window.onclick = function(event) {
+            const modal = document.getElementById('bookingModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+    </script>
+
+</body>
+</html>

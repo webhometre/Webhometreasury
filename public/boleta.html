@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generar Boleta Manual</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: #fff; display: flex; justify-content: center; padding: 40px; }
+        .form-card { background: #2a2a2a; padding: 40px; border-radius: 15px; width: 100%; max-width: 500px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); border-top: 5px solid #e91e63; }
+        
+        h2 { text-align: center; color: #e91e63; margin-top: 0; }
+        p { text-align: center; color: #aaa; font-size: 0.9em; margin-bottom: 25px; }
+
+        label { display: block; margin-top: 15px; font-size: 0.9em; color: #ccc; }
+        input { width: 100%; padding: 12px; margin-top: 5px; background: #333; border: 1px solid #444; color: white; border-radius: 5px; box-sizing: border-box; }
+        input:focus { outline: none; border-color: #e91e63; }
+
+        /* Estilo para el campo bloqueado */
+        input[readonly] { background: #222; color: #777; border-color: #333; cursor: not-allowed; }
+
+        button { width: 100%; padding: 15px; margin-top: 25px; background: #e91e63; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1em; transition: 0.3s; }
+        button:hover { background: #c2185b; }
+
+        .status { margin-top: 15px; text-align: center; font-size: 0.9em; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="form-card">
+    <h2>🧾 Datos de Facturación</h2>
+    <p>Ingresa los datos para generar y enviar la boleta oficial.</p>
+
+    <form id="boletaForm">
+        <label>Correo Electrónico (Cliente):</label>
+        <input type="email" id="email" readonly required>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>
+                <label>Nombre:</label>
+                <input type="text" id="nombre" placeholder="Ej: Juan" required>
+            </div>
+            <div>
+                <label>Apellido:</label>
+                <input type="text" id="apellido" placeholder="Ej: Perez" required>
+            </div>
+        </div>
+
+        <label>Dirección Completa:</label>
+        <input type="text" id="direccion" placeholder="Calle, Ciudad, Estado, Zip" required>
+
+        <label>Teléfono:</label>
+        <input type="tel" id="telefono" placeholder="+1 (555) 000-0000">
+
+        <label>Monto Total ($USD):</label>
+        <input type="number" id="monto" placeholder="0.00" step="0.01" required>
+
+        <button type="submit" id="btnEnviar">🚀 ENVIAR A N8N</button>
+        <div id="statusMsg" class="status"></div>
+    </form>
+</div>
+
+<script>
+    // 1. Al cargar, obtener el correo de la URL
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const emailParam = urlParams.get('email');
+        
+        if (emailParam) {
+            document.getElementById('email').value = emailParam;
+        } else {
+            alert("Error: No se recibió ningún correo.");
+        }
+    };
+
+    // 2. Manejar el envío
+    document.getElementById('boletaForm').onsubmit = async (e) => {
+        e.preventDefault();
+        
+        const btn = document.getElementById('btnEnviar');
+        const status = document.getElementById('statusMsg');
+        
+        // Recopilar datos
+        const datos = {
+            email: document.getElementById('email').value,
+            nombre: document.getElementById('nombre').value,
+            apellido: document.getElementById('apellido').value,
+            direccion: document.getElementById('direccion').value,
+            telefono: document.getElementById('telefono').value,
+            monto: document.getElementById('monto').value,
+            fecha: new Date().toISOString()
+        };
+
+        // UI de carga
+        btn.disabled = true;
+        btn.innerText = "Enviando datos...";
+        status.style.display = 'none';
+
+        // 3. ENVIAR A TU WEBHOOK DE N8N
+        // URL configurada para tu proyecto
+        const N8N_WEBHOOK_URL = "https://api.shalomespaz.com/webhook/envioboleta"; 
+
+        try {
+            // ENVIO REAL (Descomentado y limpio)
+            const response = await fetch(N8N_WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(datos)
+            });
+            
+            if (response.ok) {
+                // Si n8n responde con código 200 (OK)
+                status.style.display = 'block';
+                status.style.color = '#28a745';
+                status.innerText = "✅ Datos enviados a n8n correctamente.";
+                btn.innerText = "¡Enviado!";
+                
+                // Opcional: Cerrar ventana después de unos segundos
+                // setTimeout(() => window.close(), 3000);
+            } else {
+                throw new Error("Error en la respuesta del servidor");
+            }
+
+        } catch (error) {
+            console.error(error);
+            status.style.display = 'block';
+            status.style.color = '#ff4757';
+            status.innerText = "❌ Error al conectar con n8n.";
+            btn.disabled = false;
+            btn.innerText = "Intentar de nuevo";
+        }
+    };
+</script>
+
+</body>
+</html>

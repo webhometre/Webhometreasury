@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Payment Gateway</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="https://www.paypal.com/sdk/js?client-id=AU02FzlInFFqYsf0SyP10hnAhPwRT3TbvGIiVDacOOT2MXpR-6srwm0Gj3JzL24Um7Au3ZpbenOX04x6&currency=USD&components=buttons"></script>
+
+    
+    <style>
+        :root {
+            --primary: #00d4ff;
+            --danger: #ff4757;
+            --dark: #121212;
+            --card-bg: #ffffff;
+            --text: #333;
+            --gray: #f4f6f8;
+            --venmo: #3d95ce;
+            --paypal: #0070ba;
+        }
+
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background: var(--gray);
+            color: var(--text); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Marca de agua */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80vw; height: 80vh;
+            background-image: url('https://www.dropbox.com/scl/fi/etecc18ng3itmfdcnogap/Screenshot_20260127_153032_Chrome.jpg?rlkey=hoaa73wx1ogrgr67ve8ari5xt&st=klarub7j&raw=1'); 
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+            opacity: 0.03;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Modal Consentimiento */
+        #consent-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(5px);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal-box {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            border: 1px solid #eee;
+        }
+        .modal-btn {
+            background: var(--dark);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 30px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: 0.3s;
+            font-weight: 600;
+        }
+        .modal-btn:hover { background: var(--primary); color: black; }
+
+        /* Tarjeta Principal */
+        .checkout-card { 
+            background: var(--card-bg); 
+            padding: 40px; 
+            border-radius: 25px; 
+            width: 100%; 
+            max-width: 500px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.08); 
+            text-align: center; 
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #eaeaea;
+        }
+        .card-content { position: relative; z-index: 1; }
+
+        .brand-logo { width: 100px; margin-bottom: 15px; border-radius: 8px; }
+        .monto { font-size: 3em; font-weight: 600; color: var(--dark); margin: 5px 0; }
+
+        /* Temporizador */
+        .timer-badge {
+            background: #ffebee;
+            color: var(--danger);
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+            font-family: monospace;
+            font-size: 1.1em;
+            border: 1px solid #ffcdd2;
+        }
+        .timer-badge i { animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        /* Estilos de Formulario */
+        .styled-select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; margin-bottom: 15px; outline: none; box-sizing: border-box; }
+        .styled-select:focus { border-color: var(--primary); }
+
+        .payment-methods { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 25px; }
+        .method-btn {
+            border: 2px solid #eee; background: white; padding: 10px; border-radius: 12px; cursor: pointer; transition: 0.3s;
+            display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 0.75em; color: #555; text-align: center;
+        }
+        .method-btn:hover { border-color: var(--primary); background: #f9feff; }
+        .method-btn.active { border-color: var(--primary); background: #eefbff; color: #000; font-weight: 600; }
+        .method-btn.active i { color: var(--primary); }
+
+        .payment-details { display: none; animation: fadeIn 0.4s; text-align: left; background: #f9f9f9; padding: 20px; border-radius: 12px; border: 1px solid #eee; }
+        .payment-details.active { display: block; }
+        
+        .detail-row { margin-bottom: 15px; }
+        .detail-label { font-size: 0.8em; color: #888; display: block; margin-bottom: 5px; }
+        .detail-value { font-size: 1.1em; color: #333; font-weight: 600; display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px; border-radius: 8px; border: 1px solid #eee;}
+        .copy-btn { background: var(--primary); border: none; color: white; cursor: pointer; font-size: 0.8em; padding: 5px 10px; border-radius: 5px; font-weight: bold; }
+
+        .btn-stripe {
+            width: 100%; padding: 14px 20px; border-radius: 8px; background-color: #6772e5; color: #ffffff; border: none;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 16px; font-weight: 600;
+            display: flex; justify-content: center; align-items: center; gap: 12px; cursor: pointer;
+            box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11); transition: all 0.15s ease; margin-bottom: 10px;
+        }
+        .btn-stripe:hover { background-color: #7795f8; transform: translateY(-1px); }
+        
+        .timer-alert-integrated {
+            background-color: #fff5f5; border-left: 4px solid #e53e3e; padding: 12px 16px; border-radius: 4px;
+            color: #c53030; font-size: 13px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Mensajes de Estado */
+        #expired-msg, #review-msg, #success-msg { display: none; padding: 30px; }
+        .expired-icon { font-size: 4em; color: var(--danger); margin-bottom: 20px; }
+
+        .bottom-warning {
+            margin-top: 30px; padding: 15px; background: #fff5f5; border-left: 5px solid var(--danger);
+            color: #d32f2f; font-weight: bold; font-size: 0.9em; border-radius: 5px; text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div id="consent-modal">
+    <div class="modal-box">
+        <div class="modal-icon"><i class="fa-solid fa-shield-halved" style="font-size: 3em; color: var(--primary);"></i></div>
+        <h2>Authorized secure access</h2>
+        <p style="color: #555; margin: 15px 0;">All information is being protected under the SSL from scams and frauds.</p>
+        <button class="modal-btn" onclick="acceptConsent()">UNDERSTAND AND ACCEPT </button>
+    </div>
+</div>
+
+<div class="checkout-card" id="mainCard">
+    <div class="card-content">
+       <img src="https://www.dropbox.com/scl/fi/etecc18ng3itmfdcnogap/Screenshot_20260127_153032_Chrome.jpg?rlkey=hoaa73wx1ogrgr67ve8ari5xt&st=klarub7j&raw=1" alt="Logo" class="brand-logo">
+        
+        <div id="loading">
+            <p style="color: var(--primary); font-weight: bold;">Verifying security link...</p> 
+        </div>
+
+        <div id="content" style="display:none;">
+            
+            <div class="timer-badge">
+                <i class="fa-regular fa-clock"></i> Expira en: <span id="time-left">--:--</span>
+            </div>
+
+            <h3 id="display-concepto">...</h3>
+            <div class="monto" id="display-monto">$0.00</div>
+
+            <div style="text-align: left; margin-bottom: 10px;">
+                <label style="font-size: 0.8em; font-weight: bold; margin-left: 5px;">📧 Your email (To send valid receipt)</label>
+                <input type="email" id="client-email" placeholder="tu-correo@ejemplo.com" class="styled-select">
+            </div>
+            
+            <select class="styled-select" id="state-selector">
+                <option value="" disabled selected>📍 Select your state (USA)</option>
+                <option value="AL">Alabama</option><option value="AK">Alaska</option><option value="AZ">Arizona</option><option value="AR">Arkansas</option><option value="CA">California</option><option value="CO">Colorado</option><option value="CT">Connecticut</option><option value="DE">Delaware</option><option value="DC">District Of Columbia</option><option value="FL">Florida</option><option value="GA">Georgia</option><option value="HI">Hawaii</option><option value="ID">Idaho</option><option value="IL">Illinois</option><option value="IN">Indiana</option><option value="IA">Iowa</option><option value="KS">Kansas</option><option value="KY">Kentucky</option><option value="LA">Louisiana</option><option value="ME">Maine</option><option value="MD">Maryland</option><option value="MA">Massachusetts</option><option value="MI">Michigan</option><option value="MN">Minnesota</option><option value="MS">Mississippi</option><option value="MO">Missouri</option><option value="MT">Montana</option><option value="NE">Nebraska</option><option value="NV">Nevada</option><option value="NH">New Hampshire</option><option value="NJ">New Jersey</option><option value="NM">New Mexico</option><option value="NY">New York</option><option value="NC">North Carolina</option><option value="ND">North Dakota</option><option value="OH">Ohio</option><option value="OK">Oklahoma</option><option value="OR">Oregon</option><option value="PA">Pennsylvania</option><option value="RI">Rhode Island</option><option value="SC">South Carolina</option><option value="SD">South Dakota</option><option value="TN">Tennessee</option><option value="TX">Texas</option><option value="UT">Utah</option><option value="VT">Vermont</option><option value="VA">Virginia</option><option value="WA">Washington</option><option value="WV">West Virginia</option><option value="WI">Wisconsin</option><option value="WY">Wyoming</option>
+            </select>
+
+            <p style="text-align: left; font-size: 0.9em; font-weight: 600; margin-bottom: 10px; color: #444;">Select payment method</p>
+            
+            <div class="payment-methods">
+                <div class="method-btn active" onclick="selectMethod('card')">
+                    <i class="fa-solid fa-credit-card"></i>
+                    <span>Card / Card</span>
+                </div>
+                <div class="method-btn" onclick="selectMethod('cashapp')"><i class="fa-solid fa-dollar-sign"></i> Cash App</div>
+                <div class="method-btn" onclick="selectMethod('venmo')"><i class="fa-brands fa-venmo" style="color: #3d95ce;"></i> Venmo</div>
+            </div>
+
+            <div id="info-card" class="payment-details active" style="background: white; border: none; padding: 0;">
+                <div class="timer-alert-integrated">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span><strong>Caution:</strong> If the timer reaches zero, this order will be automatically canceled.</span>
+                </div>
+                
+                <div id="paypal-button-container"></div>
+                <p style="text-align: center; font-size: 11px; color: #999; margin-top: 5px;">Secure 256-bit SSL Encrypted Payment</p>
+
+                <button id="stripe-button" class="btn-stripe" style="display:none; margin-top: 15px;">
+                    <i class="fa-solid fa-shield-check"></i> Stripe Checkout (Legacy)
+                </button>
+            </div>
+
+            <div id="info-cashapp" class="payment-details">
+                <div class="detail-row"><span class="detail-label">Home Of Treasury:</span><div class="detail-value"><span id="cashapp-tag">$HomeOfTreasury</span> <button class="copy-btn" onclick="copyText('cashapp-tag')">COPY</button></div></div>
+                <label class="detail-label">Reference code / ID:</label>
+                <input type="text" id="ref-cashapp" placeholder="Ej: QX92LP..." class="styled-select">
+                <button class="modal-btn" style="width: 100%;" onclick="verificar('CashApp')">✅ I sent the payment.</button>
+            </div>
+
+            <div id="info-venmo" class="payment-details">
+                <div class="detail-row"><span class="detail-label">DHT:</span><div class="detail-value"><span id="venmo-tag">@Home-of-Treasury</span> <button class="copy-btn" onclick="copyText('venmo-tag')">COPY</button></div></div>
+                <label class="detail-label">Payment note:</label>
+                <input type="text" id="ref-venmo" placeholder="Ej: Services" class="styled-select">
+                <button class="modal-btn" style="width: 100%;" onclick="verificar('Venmo')">✅ I sent the payment.</button>
+            </div>
+            
+            <div id="global-warning" class="bottom-warning" style="display:none;">
+                <i class="fa-solid fa-triangle-exclamation"></i> CAUTION:<br>
+                If the timer reaches zero, this order will be automatically canceled.
+            </div>
+
+        </div>
+
+        <div id="expired-msg">
+            <i class="fa-regular fa-circle-xmark expired-icon"></i>
+            <h2 style="color: #333;">Time Expired!</h2>
+            <p style="color: #666;">The link has been terminated for security protocols!</p>
+        </div>
+
+        <div id="review-msg">
+            <i class="fa-solid fa-hourglass-half" style="font-size: 40px; color: #fbc02d; margin-bottom: 20px;"></i>
+            <h2 style="color: #333;">Payment being reviewed.</h2>
+            <p style="color: #666;">We've received your report. Invoice will be sent to <b id="msg-email"></b> shortly.</p>
+        </div>
+
+        <div id="success-msg">
+            <div style="width: 80px; height: 80px; background: #e8f5e9; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                <i class="fa-solid fa-check" style="font-size: 40px; color: #2e7d32;"></i>
+            </div>
+            <h2 style="color: #2e7d32; margin:0;">Confirmed!</h2>
+            <p style="color:#666; margin-top: 10px;">Invoice has been sent.</p>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBD7hF0yyeiX5OMdOqpLx1A9w2g0GQfdPc",
+      authDomain: "home-of-treasury.firebaseapp.com",
+      projectId: "home-of-treasury",
+      storageBucket: "home-of-treasury.firebasestorage.app",
+      messagingSenderId: "1076647044079",
+      appId: "1:1076647044079:web:2cb1d70c35ea43b36a0c1a"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderId = urlParams.get('id');
+    let montoActual = 0; 
+
+    // Lógica de pestañas (Corregida para que funcione con tus IDs)
+    window.selectMethod = function(method) {
+        document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.payment-details').forEach(d => d.classList.remove('active'));
+        
+        // Buscamos el botón correcto por el parámetro
+        const buttons = document.querySelectorAll('.method-btn');
+        if(method === 'card') buttons[0].classList.add('active');
+        if(method === 'cashapp') buttons[1].classList.add('active');
+        if(method === 'venmo') buttons[2].classList.add('active');
+        
+        const targetId = (method === 'card') ? 'info-card' : 'info-' + method;
+        document.getElementById(targetId).classList.add('active');
+        document.getElementById('global-warning').style.display = (method === 'card') ? 'none' : 'block';
+    };
+
+    window.copyText = function(elementId) {
+        const text = document.getElementById(elementId).innerText;
+        navigator.clipboard.writeText(text);
+        alert("Copied ✅");
+    };
+
+    window.acceptConsent = function() {
+        document.getElementById('consent-modal').style.display = 'none';
+    };
+
+    // LÓGICA PAYPAL
+    function renderPayPalButtons(monto) {
+        // Limpiamos el contenedor por si acaso se renderiza dos veces
+        document.getElementById('paypal-button-container').innerHTML = '';
+        
+        paypal.Buttons({
+            style: {
+                layout: 'vertical',
+                color:  'blue',
+                shape:  'rect',
+                label:  'pay'
+            },
+            createOrder: function(data, actions) {
+                const email = document.getElementById('client-email').value;
+                const state = document.getElementById('state-selector').value;
+                
+                if(!email.includes('@') || !state) {
+                    alert("⚠️ Please fill your email and state before paying.");
+                    return actions.reject();
+                }
+
+                return actions.order.create({
+                    purchase_units: [{
+                        description: "Service Order #" + orderId,
+                        amount: {
+                            currency_code: "USD",
+                            value: monto.toString()
+                        }
+                    }]
+                });
+            },
+            onApprove: function(data, actions) {
+                return actions.order.capture().then(async function(details) {
+                    const orderRef = doc(db, "s", orderId);
+                    await updateDoc(orderRef, {
+                        estado: "completado",
+                        metodo_: "Credit/Debit Card (PayPal)",
+                        email_cliente: document.getElementById('client-email').value,
+                        billing_state: document.getElementById('state-selector').value,
+                        transaction_id: details.id,
+                        fecha_pago: new Date()
+                    });
+                    showFinal("success-msg");
+                });
+            },
+            onError: function(err) {
+                console.error(err);
+                alert("The transaction could not be processed. Please check your card.");
+            }
+        }).render('#paypal-button-container');
+    }
+
+    // Reporte Manual (CashApp/Venmo)
+    window.verificar = async function(metodo) {
+        const email = document.getElementById('client-email').value;
+        const estadoUSA = document.getElementById('state-selector').value;
+        let referencia = (metodo === 'CashApp') ? document.getElementById('ref-cashapp').value : document.getElementById('ref-venmo').value;
+
+        if(!email.includes('@')) return alert("⚠️ Please insert a valid email");
+        if(!estadoUSA) return alert("⚠️ Please select your state.");
+        if(referencia.length < 3) return alert("⚠️ Insert valid Username.");
+
+        const orderRef = doc(db, "s", orderId);
+        await updateDoc(orderRef, {
+            estado: "por_verificar",
+            metodo_: metodo,
+            billing_state: estadoUSA,
+            email_cliente: email,
+            referencia_: referencia,
+            fecha_reporte: new Date()
+        });
+
+        document.getElementById('msg-email').innerText = email;
+        showFinal("review-msg");
+    };
+
+    async function cargarOrden() {
+        if (!orderId) {
+            document.getElementById('loading').innerHTML = "<h3 style='red'>Link invalid. ❌</h3>";
+            return;
+        }
+
+        const docRef = doc(db, "s", orderId);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            montoActual = data.monto; 
+
+            if(data.estado === "pendiente" || data.estado === "Waiting") {
+                gestionarTemporizador(data.fecha);
+                document.getElementById('display-monto').innerText = `$${data.monto}`;
+                document.getElementById('display-concepto').innerText = data.descripcion;
+                document.getElementById('loading').style.display = "none";
+                document.getElementById('content').style.display = "block";
+                
+                // Inicializar PayPal con el monto de la DB
+                renderPayPalButtons(data.monto);
+
+            } else if (data.estado === "por_verificar") {
+                showFinal("review-msg");
+                document.getElementById('msg-email').innerText = data.email_cliente || "...";
+            } else if (data.estado === "completado") {
+                showFinal("success-msg");
+            } else {
+                 bloquearOrden();
+            }
+        } else {
+            document.getElementById('loading').innerHTML = "<h3 style='red'>Order not found.</h3>";
+        }
+    }
+
+    function gestionarTemporizador(fechaCreacion) {
+        const inicio = fechaCreacion?.toDate() || new Date();
+        const expiracion = new Date(inicio.getTime() + 15 * 60 * 1000);
+        
+        const tick = () => {
+            const dif = expiracion - new Date();
+            if (dif <= 0) {
+                bloquearOrden();
+                return clearInterval(int);
+            }
+            const m = Math.floor(dif / 60000);
+            const s = Math.floor((dif % 60000) / 1000);
+            document.getElementById('time-left').innerText = `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+        };
+        const int = setInterval(tick, 1000);
+        tick();
+    }
+
+    function bloquearOrden() {
+        document.getElementById('content').style.display = "none";
+        document.getElementById('loading').style.display = "none";
+        document.getElementById('expired-msg').style.display = "block";
+    }
+
+    function showFinal(id) {
+        document.getElementById('content').style.display = "none";
+        document.getElementById('loading').style.display = "none";
+        document.getElementById(id).style.display = "block";
+    }
+
+    // Botón Stripe (Legacy / Opcional)
+    document.getElementById('stripe-button').onclick = () => {
+        const email = document.getElementById('client-email').value;
+        const estadoUSA = document.getElementById('state-selector').value;
+        if(!email.includes('@') || !estadoUSA) return alert("⚠️ Fill email and state first.");
+        window.location.href = "https://buy.stripe.com/TU_LINK_STRIPE?prefilled_email=" + encodeURIComponent(email);
+    };
+
+    cargarOrden();
+</script>
+</body>
+</html>
