@@ -11,11 +11,20 @@
         h2 { text-align: center; color: #00d4ff; margin-top: 0; }
         h3 { text-align: center; color: #fbc02d; margin-top: 0; }
         h4 { text-align: center; color: #e91e63; margin-top: 0; }
+        /* Estilo para el nuevo título de firmas */
+        h5 { text-align: center; color: #1a73e8; margin-top: 0; font-size: 1.2em; text-transform: uppercase; letter-spacing: 1px; }
+        
         input { width: 100%; padding: 12px; margin: 10px 0; border: none; border-radius: 8px; background: #333; color: white; box-sizing: border-box; }
         button { width: 100%; padding: 12px; margin-top: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        
         .btn-generate { background: #00d4ff; color: #000; }
         .btn-generate:hover { background: #0099bb; }
         .btn-n8n { background: #e91e63; color: white; }
+        
+        /* Estilo para el nuevo botón de Firmas */
+        .btn-signature { background: #1a73e8; color: white; border: 2px solid #1a73e8; }
+        .btn-signature:hover { background: transparent; color: #1a73e8; }
+
         #linkResult { margin-top: 25px; display: none; padding: 15px; background: #333; border-radius: 8px; border-left: 4px solid #00d4ff; }
         .btn-copy { background: #28a745; color: white; margin-top: 10px; font-size: 0.9em; }
         .token-text { font-family: monospace; font-size: 0.8em; color: #aaa; word-break: break-all; display: block; margin-top: 5px; }
@@ -51,6 +60,12 @@
     </div>
 
     <div class="container">
+        <h5>🖋️ TrustID Signatures</h5>
+        <p style="font-size: 0.85em; color: #888; text-align: center;">Genera tokens de validación y envía correos de firma profesional.</p>
+        <button class="btn-signature" onclick="window.location.href='tokensfirma.html'">🚀 Ir al Generador de Tokens</button>
+        
+        <hr style="border: 0; border-top: 1px solid #444; margin: 25px 0;">
+        
         <h4>📨 Envíos Manuales</h4>
         <input type="email" id="n8n-email" placeholder="Correo del cliente">
         <button class="btn-n8n" id="btnManualN8N">🚀 Abrir Formulario de Envío</button>
@@ -71,15 +86,12 @@
       appId: "1:1076647044079:web:2cb1d70c35ea43b36a0c1a"
     };
 
-    // INICIALIZACIÓN
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // ELEMENTOS
     const btnCrear = document.getElementById('btnCrear');
     const errorLog = document.getElementById('error-log');
 
-    // --- LÓGICA DE GENERACIÓN ---
     btnCrear.onclick = function() {
         const desc = document.getElementById('desc').value;
         const monto = document.getElementById('monto').value;
@@ -93,7 +105,6 @@
         btnCrear.disabled = true;
         errorLog.style.display = "none";
 
-        // Guardar en la colección "s" (como el original)
         db.collection("s").add({
             descripcion: desc,
             monto: parseFloat(monto),
@@ -101,18 +112,14 @@
             fecha: firebase.firestore.FieldValue.serverTimestamp()
         })
         .then((docRef) => {
-            // CONSTRUIR LA URL DEL TOKEN
             const urlFinal = window.location.origin + "/payments.html?id=" + docRef.id;
-            
             document.getElementById('finalUrl').innerText = urlFinal;
             document.getElementById('tokenID').innerText = "ID: " + docRef.id;
             document.getElementById('linkResult').style.display = "block";
-            
             btnCrear.innerText = "Generar Otro Link";
             btnCrear.disabled = false;
         })
         .catch((error) => {
-            console.error("Error Firebase:", error);
             errorLog.style.display = "block";
             errorLog.innerText = "Error: " + error.message;
             btnCrear.innerText = "Reintentar";
@@ -120,23 +127,19 @@
         });
     };
 
-    // BOTÓN COPIAR
     document.getElementById('btnCopiar').onclick = function() {
         const texto = document.getElementById('finalUrl').innerText;
         navigator.clipboard.writeText(texto).then(() => alert("Copiado al portapapeles"));
     };
 
-    // --- LÓGICA DE VERIFICACIÓN (TIEMPO REAL) ---
     db.collection("s").where("estado", "==", "por_verificar")
     .onSnapshot((snapshot) => {
         const lista = document.getElementById('lista-pendientes');
         lista.innerHTML = "";
-
         if (snapshot.empty) {
             lista.innerHTML = "<div style='text-align:center;color:#555;padding:20px;'>No hay pagos por revisar</div>";
             return;
         }
-
         snapshot.forEach((doc) => {
             const data = doc.data();
             const item = document.createElement('div');
@@ -150,16 +153,12 @@
         });
     });
 
-    // FUNCIÓN APROBAR
     window.aprobarPago = function(id) {
         if(confirm("¿Confirmas que recibiste el dinero?")) {
-            db.collection("s").doc(id).update({
-                estado: "completado"
-            }).then(() => alert("Pago Aprobado"));
+            db.collection("s").doc(id).update({ estado: "completado" }).then(() => alert("Pago Aprobado"));
         }
     };
 
-    // BOTÓN N8N
     document.getElementById('btnManualN8N').onclick = function() {
         const email = document.getElementById('n8n-email').value;
         if(email) {

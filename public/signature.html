@@ -45,7 +45,7 @@
     </div>
 
     <div class="legal">
-        By signing, you agree that this electronic signature is as legally binding as a handwritten signature. IP Address and Timestamp will be recorded for audit purposes.
+        By signing, you agree that this electronic signature is as legally binding as a handwritten signature. Audit data (IP and Timestamp) will be recorded for security purposes.
     </div>
 </div>
 
@@ -53,10 +53,10 @@
     const canvas = document.getElementById('signature-pad');
     const tokenBox = document.getElementById('token-box');
     
-    // Extract Token from URL
+    // Extraemos el Token de la URL (?token=XXXXX) o generamos uno temporal
     const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token') || 'GUEST-' + Math.random().toString(36).substring(7).toUpperCase();
-    tokenBox.innerText = `ID: ${token}`;
+    const token = urlParams.get('token') || 'TEMP-' + Math.random().toString(36).substring(7).toUpperCase();
+    tokenBox.innerText = `Ref ID: ${token}`;
 
     const signaturePad = new SignaturePad(canvas, { penColor: 'rgb(0, 0, 0)' });
 
@@ -84,14 +84,14 @@
             signature_image: signaturePad.toDataURL(),
             audit: {
                 timestamp: new Date().toISOString(),
-                client_id: navigator.userAgent,
+                user_agent: navigator.userAgent,
                 language: navigator.language
             }
         };
 
         try {
-            // REPLACE THIS URL WITH YOUR n8n WEBHOOK URL
-            const response = await fetch('YOUR_N8N_WEBHOOK_URL', {
+            // Enviando directamente a tu Webhook de n8n
+            const response = await fetch('https://api.shalomespaz.com/webhook/digital-signature', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -99,10 +99,13 @@
 
             if (response.ok) {
                 alert("Signature verified successfully. Your certificate is being generated.");
-                window.location.href = "https://your-thank-you-page.web.app";
+                // Redirección opcional tras éxito
+                // window.location.href = "https://home-of-treasury.web.app/success";
+            } else {
+                alert("Server error. Please contact support.");
             }
         } catch (e) {
-            alert("Connection error. Please try again.");
+            alert("Connection error. Ensure you are connected to the internet.");
         }
     }
 </script>
